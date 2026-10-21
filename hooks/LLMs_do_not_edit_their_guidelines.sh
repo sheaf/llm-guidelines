@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# PreToolUse hook: ensure Claude never edits guideline files.
+# PreToolUse hook: ensure LLMs never edit guideline files.
 
 # Check required dependencies are available.
 for tool in jq realpath; do
-  command -v -- "$tool" >/dev/null || { echo "read_only_docs.sh: $tool is required but not on PATH" >&2; exit 2; }
+  command -v -- "$tool" >/dev/null || { echo "$tool is required but not on PATH" >&2; exit 2; }
 done
 
 repo=$(realpath -- "$(dirname -- "$(realpath -- "$0")")/..")

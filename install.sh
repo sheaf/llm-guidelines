@@ -42,14 +42,24 @@ for entry in "${links[@]}"; do
   echo "linked $name -> $target"
 done
 
-# Register the hook, leaving the rest of settings.json alone.
-hook="bash $repo/hooks/read_only_docs.sh"
+# Register the hooks, leaving the rest of settings.json alone.
 [ -f "$settings" ] || echo '{}' > "$settings"
-tmp=$(mktemp)
-jq --arg cmd "$hook" '
+edit_settings() { # edit_settings JQ-ARGS...: rewrite settings.json through jq
+  local tmp
+  tmp=$(mktemp)
+  jq "$@" "$settings" > "$tmp" && mv -- "$tmp" "$settings"
+}
+# Drop every hook from this repository first, so that a renamed or removed
+# script does not stay registered.
+edit_settings --arg prefix "bash $repo/hooks/" '
   .hooks.PreToolUse = ((.hooks.PreToolUse // [])
-    | map(select((.hooks // []) | any(.command == $cmd) | not))
-    + [{matcher: "Edit|Write|MultiEdit|NotebookEdit",
-        hooks: [{type: "command", command: $cmd}]}])
-' "$settings" > "$tmp" && mv -- "$tmp" "$settings"
-echo "registered hook in $settings"
+    | map(select((.hooks // []) | any(.command | startswith($prefix)) | not)))
+'
+register() { # register MATCHER SCRIPT
+  edit_settings --arg matcher "$1" --arg cmd "bash $repo/hooks/$2" '
+    .hooks.PreToolUse += [{matcher: $matcher, hooks: [{type: "command", command: $cmd}]}]
+  '
+  echo "registered $2 in $settings"
+}
+register "Edit|Write|MultiEdit|NotebookEdit" LLMs_do_not_edit_their_guidelines.sh
+register "Bash"                              no_docs_todos_on_commit.sh

@@ -37,9 +37,32 @@ Every comment has to be kept in sync with the code it describes. Two cases
 where that upkeep is rarely worth it:
 
   - Code under active iteration: each change would invalidate the documentation.
-    Keep it minimal and write the real documentation once the dust settles.
+    Keep it minimal and write the real documentation once the dust settles:
+    see [§ Defer documenting](#defer-documenting).
   - Tests, which need at most a quick statement of what they test, usually best
     left as a single link to a bug tracker.
+
+## Defer documenting
+
+Don't write comments in the middle of carrying out a task: such comments end
+up narrating the work in progress. They lack the necessary big picture, and
+are full of incidental information about the transition from the old code to
+the new. As noted above, while things are still in flux, their upkeep would be
+costly as well.
+
+Instead, documentation should be deferred until later. Any important contextual
+facts can be written down to avoid being lost: `TODO(doc): <fact>`. These
+are internal notes that may be used in a subsequent documentation pass, or they
+may be discarded. Do not rewrite comments that have become stale either; just
+mark them in the same way. Pre-existing comments remain subject to § Ownership
+in the general guidelines.
+
+Mechanical fixes (a renamed identifier inside a comment) are exempt and can
+be performed immediately.
+
+The markers are resolved in a documentation pass
+([../skills/documentation/SKILL.md]) once the design has settled: at a checkpoint
+the user picks, and at the latest before committing.
 
 ## Style
 
