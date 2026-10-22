@@ -42,12 +42,12 @@ for entry in "${links[@]}"; do
   echo "linked $name -> $target"
 done
 
-# Register the hooks, leaving the rest of settings.json alone.
+# Register the hooks and permission rules, preserving the rest of settings.json.
 [ -f "$settings" ] || echo '{}' > "$settings"
 edit_settings() { # edit_settings JQ-ARGS...: rewrite settings.json through jq
   local tmp
   tmp=$(mktemp)
-  jq "$@" "$settings" > "$tmp" && mv -- "$tmp" "$settings"
+  jq "$@" < "$settings" > "$tmp" && mv -- "$tmp" "$settings"
 }
 # Drop every hook from this repository first, so that a renamed or removed
 # script does not stay registered.
@@ -55,11 +55,22 @@ edit_settings --arg prefix "bash $repo/hooks/" '
   .hooks.PreToolUse = ((.hooks.PreToolUse // [])
     | map(select((.hooks // []) | any(.command | startswith($prefix)) | not)))
 '
-register() { # register MATCHER SCRIPT
-  edit_settings --arg matcher "$1" --arg cmd "bash $repo/hooks/$2" '
-    .hooks.PreToolUse += [{matcher: $matcher, hooks: [{type: "command", command: $cmd}]}]
-  '
-  echo "registered $2 in $settings"
+register() { # register MATCHER SCRIPT IF-RULE...: one handler per IF-RULE
+  local matcher=$1 script=$2
+  shift 2
+  edit_settings --arg matcher "$matcher" --arg cmd "bash $repo/hooks/$script" '
+    .hooks.PreToolUse += [{matcher: $matcher,
+      hooks: [$ARGS.positional[] | {type: "command", if: ., command: $cmd}]}]
+  ' --args "$@"
+  echo "registered $script in $settings"
 }
-register "Edit|Write|MultiEdit|NotebookEdit" LLMs_do_not_edit_their_guidelines.sh
-register "Bash"                              no_docs_todos_on_commit.sh
+
+# Only run the "commit" hook on 'git commit'.
+register "Bash" no_docs_todos_on_commit.sh "Bash(git commit*)" "Bash(git -C *)"
+
+# Prevent LLMs from editing their own guidelines.
+deny="Edit(/$repo/**)"
+edit_settings --arg rule "$deny" '
+  .permissions.deny = ((.permissions.deny // []) - [$rule] + [$rule])
+'
+echo "added $deny to permissions.deny in $settings"
