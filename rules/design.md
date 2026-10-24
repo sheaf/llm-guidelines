@@ -112,28 +112,22 @@ maintenance across the codebase.
 
 ## Naming
 
-Identifiers should be self-descriptive, taking into account whether the
-identifier is expected to be used qualified or unqualified.
+### Judge a name by the exact context it will occur in
 
-`containers`, `vector` are good references: we use `Map.insert`
-and `Boxed.Vector.map`, not `Map.insertMap` nor `Boxed.Vector.mapVector`.
-Conversely, for a module imported unqualified, names should stand on
-their own, e.g. `GHC.Core.Coercion` is imported unqualified, so it defines `mkSymCo` and `coercionKind`, not `mkSym` or `getKind` etc.
+Every name should make sense __in the context of its occurrences__ to a reader
+who hasn't seen its definition.
 
-Think about what occurrences of the identifier will look like:
-`data Stretch` from `Data.Time` appearing unqualified in a type signature
-elsewhere is mystifying; either it should be qualified or it should be
-something like `TimeSpan`.
+The name on its own should communicate what the thing is. It is OK if that
+results in a long name, but just stuffing incidental aspects of the thing into
+its name is not a proper solution either.  
+A verb turned into a noun ("the ray arrives at the vertex", so `data Arrival`),
+or a generic noun that could belong to any program (`Contribution`, `Technique`,
+`Stretch`), carries no meaningful information as a standalone name.  
+If a name is expected to appear qualified, then the module qualification can
+shoulder some of this burden, e.g. `Sampling.Technique` reads fine where a bare
+`Technique` doesn't.
 
-Don't duplicate the type name in the field selector name, e.g. prefer
-
-```hs
-data Song = Song { duration :: Seconds }
-```
-
-and we can use `Song.duration` if disambiguation is needed.
-
-
+### Consistent naming
 
 Use consistent nomenclature. For example, mixing `Instant`, `Moment`,
 `Timestamp` for a single concept will send readers hunting for a difference
