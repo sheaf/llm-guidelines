@@ -94,6 +94,15 @@ bar2 :: ...
 bar3 :: ...
 ```
 
+Similarly, the following documentation is incomprehensible in the context
+that it will appear in:
+
+```hs
+data Config = Config
+  { verbosity :: Int  -- ^ of the output
+  }
+```
+
 
 ## Locality
 
